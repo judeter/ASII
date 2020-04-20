@@ -5,6 +5,7 @@ Description:
 """
 
 import pandas as pd
+from matplotlib import pyplot as plt
 
 mobility = pd.read_csv('Global_Mobility_Report.csv')
 
@@ -21,3 +22,5 @@ nm_mean_by_date = nm_mobility.groupby('date').mean()
 nm_std_by_date = nm_mobility.groupby('date').std()
 
 nm_mean_by_date.plot(subplots=True, figsize=(6, 18))
+
+plt.show()
