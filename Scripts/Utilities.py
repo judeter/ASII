@@ -15,7 +15,8 @@ def random_2d_grid_graph(num_nodes=100, grid_size=(-50,50), weighted=False,
     
     # Assertions and warnings
     assert abs(grid_size[0])*abs(grid_size[1]) > num_nodes
-
+    
+    nodes = list(range(num_nodes))
     # Assign node cordinates random uniform
     node_cordinates = []    
     while len(node_cordinates) < num_nodes:
@@ -24,24 +25,26 @@ def random_2d_grid_graph(num_nodes=100, grid_size=(-50,50), weighted=False,
             node_cordinates.append(cord)
     
     edges = []
-    weights = []
-    for inx, from_cord in enumerate(node_cordinates):
-        for to_cord in node_cordinates[inx+1:]:
+    if weighted:
+        weights = []
+    for from_node, from_cord in enumerate(node_cordinates):
+        for inx, to_cord in enumerate(node_cordinates[from_node+1:]):
+            to_node = from_node+inx+1
             
             dist = np.sqrt((from_cord[0]-to_cord[0])**2+
                            (from_cord[1]-to_cord[1])**2)
             
             if dist <= max_connection_dist:
-                edges.append((from_cord, to_cord))
+                edges.append((from_node, to_node))
                 if weighted:
                     weights.append(dist)
     
     g = nx.Graph()
-    for node in node_cordinates:
-        g.add_node(node)
+    for node, pos in zip(nodes, node_cordinates):
+        g.add_node(node, pos=pos)
         
     if weighted:
-        for edge, weight in zip(edges, weights): 
+        for edge, weight, pos in zip(edges, weights): 
             g.add_edge(*edge, weight=weight)
     else:
         for edge in edges: 
@@ -50,7 +53,7 @@ def random_2d_grid_graph(num_nodes=100, grid_size=(-50,50), weighted=False,
     return g
 
 # %%
-def layout_2d(G):
-    return {node: node for node in G.nodes}
+def layout_2d(G, position_data_key='pos'):
+    return {node: pos for node, pos in G.nodes(data=position_data_key)}
 
 
