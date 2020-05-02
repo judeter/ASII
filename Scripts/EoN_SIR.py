@@ -1,5 +1,6 @@
 """
 Desctiption:
+    A Demo implimentation of
 
 """
 
@@ -10,6 +11,26 @@ import networkx as nx
 import EoN
 import matplotlib.pyplot as plt
 
+def single_step_model(G, tau, gamma, infecteds, recovereds, tstep):
+
+    data_seg = EoN.fast_SIR(G, tau, gamma, tmax=tstep,
+                            initial_infecteds=infecteds,
+                            initial_recovereds=recovereds,
+                            return_full_data=True)
+    return data_seg
+
+
+def run_model():
+
+
+
+
+    return
+
+
+
+
+# Initilization
 G = nx.configuration_model([1, 5, 10]*333)
 gamma = 1.
 tau = 0.3
@@ -19,7 +40,7 @@ S = []
 I = []
 R = []
 
-data_seg = EoN.fast_SIR(G, tau, gamma, rho=0.05, return_full_data=True)
+
 
 t_seg, SIR = data_seg.summary()
 t += list(t_seg)
@@ -34,12 +55,8 @@ S_nodes = set([key for key in status if status[key] == 'S'])
 R_nodes = All_nodes.difference(I_nodes).difference(S_nodes)
 
 for i in range(4):
-    print(i)
 
-    data_seg = EoN.fast_SIR(G, tau, gamma, tmax=2.0,
-                            initial_infecteds=I_nodes,
-                            initial_recovereds=R_nodes,
-                            return_full_data=True)
+
 
     t_seg, SIR = data_seg.summary()
     t += list(t_seg)
