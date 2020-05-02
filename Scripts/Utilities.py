@@ -5,22 +5,20 @@ Author: Justin Deterding
 Description:
 
 """
+
 #%%
-def random_2d_grid_graph(num_nodes=100, grid_size=(-50,50), weighted=False, 
-                         max_connection_dist=10):
+def random_2d_grid_graph(num_nodes, max_connection_dist, position_generator, 
+                         args=(), weighted=False):
     # IMPORTS
-    from random import randint
     import numpy as np
     import networkx as nx
-    
-    # Assertions and warnings
-    assert abs(grid_size[0])*abs(grid_size[1]) > num_nodes
     
     nodes = list(range(num_nodes))
     # Assign node cordinates random uniform
     node_cordinates = []    
     while len(node_cordinates) < num_nodes:
-        cord = (randint(*grid_size), randint(*grid_size)) 
+        cord = (position_generator(*args), 
+                position_generator(*args)) 
         if cord not in node_cordinates:
             node_cordinates.append(cord)
     
