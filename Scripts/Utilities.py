@@ -102,41 +102,135 @@ def combineResults(results):
     
     return combined_arr
 
-def plot_SIRD(cmder_false_mean, cmder_false_std, 
-              cmder_true_mean, cmder_true_std):
+#%% Infected checker
+
+
+#%%
+def nodeCommanderRuleFollower(neighbors, connected_neighbors, 
+                              susceptible_neighbors, infected_neighbors, 
+                              rule_set):
+    """
+    Rule set form
+      | D  | C
+    -----------
+    S|
+    I|
+    R|
+
+    """
+    import random
+    disconnect_nodes = []
+    connect_nodes = []
+    for node in neighbors:
+        # determine collumn index based on edge state
+        if node in connected_neighbors:
+            edge_state_idx = 1
+        else:
+            edge_state_idx = 0
+        #determine row index based on node state
+        if node in susceptible_neighbors: 
+            node_state_idx = 0    
+        elif node in infected_neighbors:
+            node_state_idx = 1
+        else:
+            node_state_idx = 2
+        
+        # if rule is true then switch state of edge
+        if rule_set[node_state_idx][edge_state_idx] > random.random():
+            if edge_state_idx == 1:
+                disconnect_nodes.append(node)
+            else:
+                connect_nodes.append(node)
+        else:
+            pass  # do nothing
+    return connect_nodes, disconnect_nodes
+
+              
+#%%            
+def nodeCommandGennerator(nodeCommander, args):
+    """This is a hack, args should be an argument in the EoN function."""
+    nc = lambda n, c_n, s_n, i_n: nodeCommander(n, c_n, s_n, i_n, *args)
+    return nc
+
+
+#%%
+def test_ruleCommander():
+    """ Series of simple test to check functionality"""
+    neighbors = {1, 2, 3, 4, 5, 6}
+    connected_neighbors = {1, 2, 3}
+    susceptible_neighbors = {2, 3}
+    infected_neighbors = {1}
+    # disconnect all no matter what
+    rule_set_1 = [[0, 1],
+                  [0, 1],
+                  [0, 1]]
+    cn, dn = nodeCommanderRuleFollower(neighbors, connected_neighbors,
+                                       susceptible_neighbors,
+                                       infected_neighbors,
+                                       rule_set_1)    
+    assert list(connected_neighbors) == dn 
+    assert [] == cn
+    # flip current connections
+    rule_set_2 = [[1, 1],
+                  [1, 1],
+                  [1, 1]]    
+    cn, dn = nodeCommanderRuleFollower(neighbors, connected_neighbors,
+                                       susceptible_neighbors,
+                                       infected_neighbors,
+                                       rule_set_2)
+    assert list(connected_neighbors) == dn
+    assert list(neighbors.difference(connected_neighbors)) == cn
+
+
+#%%    
+def getStats(results, graph_size=1):
+    import numpy as np
+    mean = results.mean(axis=0)
+    std = results.std(axis=0)
+    
+    mean_stats = {}
+    
+    mean_stats['I max'] = np.max(mean[1])/graph_size 
+    mean_stats['I std'] = std[1][np.argmax(mean[1])]/graph_size 
+    
+    mean_stats['D min'] = np.min(mean[3])
+    mean_stats['D std'] = std[3][np.argmin(mean[1])]
+    
+    mean_stats['S end'] = mean[0][-1]/graph_size
+    mean_stats['S std'] = std[0][-1]/graph_size
+    
+    return mean_stats
+
+
+#%%
+def plot_SIRD(mean_and_std_list, plot_confidence_interval=True, fontsize=24,
+              linestyle_list = ['solid']):
     
     import matplotlib.pyplot as plt
     import numpy as np
     
-    fig, axarr = plt.subplots(nrows=4, ncols=1, sharex=True)
+    fig, axarr = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(4,8))
 
-    axarr[0].set_title('Susceptible')
-    axarr[0].plot(cmder_false_mean[0], '-g', label='no commander')
-    axarr[0].plot(cmder_true_mean[0], '--g', label='yes commander')
+    for mean_and_std, linestyle in zip(mean_and_std_list, linestyle_list):
+        mean, std = mean_and_std
+        axarr[0].set_title('Mean Susceptible', fontsize=fontsize)
+        axarr[0].plot(mean[0], color='green', linestyle=linestyle)
+        
+        axarr[1].set_title('Mean Infected', fontsize=fontsize)
+        axarr[1].plot(mean[1], color='red', linestyle=linestyle)
+        upper_95pct = mean[1]+std[1] 
+        lower_95pct = mean[1]-std[1]
+        x = np.arange(len(std[1]))
+        axarr[1].fill_between(x, upper_95pct, lower_95pct, color='red', 
+                              alpha=0.1)
+        
+        axarr[2].set_title('Mean Recovered', fontsize=fontsize)
+        axarr[2].plot(mean[2], color='gray', linestyle=linestyle)
+        
+        axarr[3].set_title('Mean Average Node Degree', fontsize=fontsize)
+        axarr[3].plot(mean[3], color='black', linestyle=linestyle)
     
-    axarr[1].set_title('Infected')
-    axarr[1].plot(cmder_false_mean[1], '-r', label='no commander')
-    upper_95pct = cmder_false_mean[1]+cmder_false_std[1] 
-    lower_95pct = cmder_false_mean[1]-cmder_false_std[1]
-    x = np.arange(len(cmder_false_std[1]))
-    axarr[1].fill_between(x, upper_95pct, lower_95pct, color='r', alpha=0.1)
-    
-    axarr[1].fill_between(x, upper_95pct, lower_95pct, color='r', alpha=0.1)
-    axarr[1].plot(cmder_true_mean[1], '--r', label='yes commander')
-    upper_95pct = cmder_true_mean[1]+cmder_true_std[1] 
-    lower_95pct = cmder_true_mean[1]-cmder_true_std[1]
-    x = np.arange(len(cmder_true_std[1]))
-    axarr[1].fill_between(x, upper_95pct, lower_95pct, color='r', alpha=0.1)
-    
-    axarr[2].set_title('Recovered')
-    axarr[2].plot(cmder_false_mean[2], '-k', label='no commander')
-    axarr[2].plot(cmder_true_mean[2], '--k', label='yes commander')
-    
-    axarr[3].set_title('Average Degree')
-    axarr[3].plot(cmder_false_mean[3], '-k', label='no commander')
-    axarr[3].plot(cmder_true_mean[3], '--k', label='yes commander')
-    
-    plt.legend()
+    plt.tight_layout()
     return fig
 
     
