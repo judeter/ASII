@@ -11,8 +11,8 @@ import random
 
 # Had to add simulation.py to my path, pip install wouldn't work properly
 import sys
-sys.path.insert(1, "C:\\Users\\cathe\\PycharmProjects\\Mathematics-of-Epidemics-on-Networks\\EoN\\")
-import simulation as sim
+sys.path.insert(1, "C:\\Users\\cathe\\PycharmProjects\\Mathematics-of-Epidemics-on-Networks")
+import EoN as sim
 
 countries = td.build_countries_dictionary()
 G = td.get_composed_graph(nx.Graph(), countries)
@@ -48,16 +48,22 @@ def plot_animation(save=False):
     if save:
         ani.save('SIR_topdown.mp4', fps=5, extra_args=['-vcodec', 'libx264'])
 
-
+#%%
 def plot_graph_alone():
-    t, S, I, R = sim.discrete_SIR(G, args=(r_naught,), rho=init_infected,
-                                  graph_commander=[countries, [G.copy()]])
+    t, S, I, R, D = sim.discrete_SIR(G, args=(r_naught,), rho=init_infected,
+                                     graph_commander=[countries, [G.copy()]])
     # Plot
     plt.figure(figsize=(20, 8))
+    ax1 = plt.gca()
     plt.rcParams.update({'font.size': 25})
     plt.plot(t, S, color='green', lw=3, label='S')
     plt.plot(t, I, color='red', lw=3, label='I')
     plt.plot(t, R, color='blue', lw=3, label='R')
+    plt.legend()
+    plt.ylabel('Number of nodes')
+    ax2 = plt.twinx(ax1)
+    plt.plot(t, D, color='black', lw=3, label='Degree')
+    plt.ylabel('Average ')
     plt.title('SIR model with {:.0f}% initially infected and $R_0$ = {}'
               .format(init_infected*100, r_naught))
     plt.grid()

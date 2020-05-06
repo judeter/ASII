@@ -14,7 +14,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from random import seed
 from random import random as rand
-from Utilities import random_2d_grid_graph, layout_2d
+from Utilities import random_2d_grid_graph, layout_2d, multiRun, plot_SIRD
 
 seed(10)
 
@@ -30,41 +30,6 @@ def singleRunCmderTrue(graph, prob_trans, rho, node_commander):
     yes_node_cmd = EoN.discrete_SIR(graph, args=(prob_trans,), rho=rho,
                                     node_commander=nodeCommander)
     return yes_node_cmd[1:]
-
-
-def combineResults(results):
-    """
-    Take a list of numpy arrays. Each numpy array should have an equal number 
-    of collumns, with variying numbers of rows. The results are combined into
-    a single numpy array with dimention {num_runs,num_output,max_output_len}.
-    
-    Parameters
-    ----------
-    results : list of list or arrays
-        The results from various runs of multiRun are stored in a list, called 
-        results.
-
-    Returns
-    -------
-    combined_arr : numpy array
-        single numpy array with dimention {num_runs,num_output,max_output_len}.
-
-    """
-    import numpy as np
-    
-    max_len_run = max([len(run[0]) for run in results])
-    
-    combined_arr = np.array([np.pad(run, ((0, 0), 
-                                         (0, max_len_run-len(run[0]))), 
-                                    mode='edge') 
-                             for run in results])
-    
-    return combined_arr
-
-
-def multiRun(single_run, args, N=10):
-    results = [single_run(*args) for i in range(N)]
-    return combineResults(results)
 
 
 def nodeCommander(neighbors, connected_neighbors, susceptible_neighbors, 
@@ -88,10 +53,10 @@ prob_trans = 0.2
 
 #%% Run scanario with Node Comander
 args = (g.copy(), prob_trans, rho, nodeCommander)
-cmder_true_results = multiRun(singleRunCmderTrue, args=args)
+cmder_true_results = multiRun(singleRunCmderTrue, args)
 #%% Run scanario without Node Comander
 args = (g.copy(), prob_trans, rho)
-cmder_false_results = multiRun(singleRunCmderFalse, args=args)    
+cmder_false_results = multiRun(singleRunCmderFalse, args)    
 #%% Calculate Mean and standard deviation of results
 
 cmder_false_mean = cmder_false_results.mean(axis=0)
@@ -100,43 +65,17 @@ cmder_false_std = cmder_false_results.std(axis=0)
 cmder_true_std = cmder_true_results.std(axis=0)    
 
 #%% Plotting SIR-Degree Dynamics 
-fig, axarr = plt.subplots(nrows=4, ncols=1, sharex=True)
+plot_SIRD(cmder_false_mean, cmder_false_std, 
+          cmder_true_mean, cmder_true_std)
 
-axarr[0].set_title('Susceptible')
-axarr[0].plot(cmder_false_mean[0], '-g', label='no commander')
-axarr[0].plot(cmder_true_mean[0], '--g', label='yes commander')
-
-axarr[1].set_title('Infected')
-axarr[1].plot(cmder_false_mean[1], '-r', label='no commander')
-upper_95pct = cmder_false_mean[1]+cmder_false_std[1] 
-lower_95pct = cmder_false_mean[1]-cmder_false_std[1]
-x = np.arange(len(cmder_false_std[1]))
-axarr[1].fill_between(x, upper_95pct, lower_95pct, color='r', alpha=0.1)
-
-axarr[1].fill_between(x, upper_95pct, lower_95pct, color='r', alpha=0.1)
-axarr[1].plot(cmder_true_mean[1], '--r', label='yes commander')
-upper_95pct = cmder_true_mean[1]+cmder_true_std[1] 
-lower_95pct = cmder_true_mean[1]-cmder_true_std[1]
-x = np.arange(len(cmder_true_std[1]))
-axarr[1].fill_between(x, upper_95pct, lower_95pct, color='r', alpha=0.1)
-
-axarr[2].set_title('Recovered')
-axarr[2].plot(cmder_false_mean[2], '-k', label='no commander')
-axarr[2].plot(cmder_true_mean[2], '--k', label='yes commander')
-
-axarr[3].set_title('Average Degree')
-axarr[3].plot(cmder_false_mean[3], '-k', label='no commander')
-axarr[3].plot(cmder_true_mean[3], '--k', label='yes commander')
-
-
-plt.legend()
 #%% 
+"""
 nx_kwargs = {'node_size':5}
 full_data = EoN.discrete_SIR(g, args=(prob_trans,), rho=rho, 
                              return_full_data=True)
 ani = full_data.animate(node_size=5, pos=layout_2d(g), width=0.125)
 
-ani.save('demo_animation.mp4', fps=5)
+ani.save('demo_animationWithoutCmder.mp4', fps=5)
 #%%
 nx_kwargs = {'node_size':5}
 full_data = EoN.discrete_SIR(g, args=(prob_trans,), rho=rho,
@@ -144,4 +83,5 @@ full_data = EoN.discrete_SIR(g, args=(prob_trans,), rho=rho,
                              return_full_data=True)
 ani = full_data.animate(node_size=5, pos=layout_2d(g), width=0.125)
 
-ani.save('demo_animation.mp4', fps=5)
+ani.save('demo_animationWithCmder.mp4', fps=5)
+"""
