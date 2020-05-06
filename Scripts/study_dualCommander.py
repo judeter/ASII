@@ -71,17 +71,30 @@ G = nx.compose_all([countries[key]['G'] for key in countries])
 sub_graphs = [countries[key]['G'] for key in countries]
 for pair in it.combinations(sub_graphs, 2):
     util.add_euclidian_edges(pair, 0.4, G=G)
+plt.figure()
 nx.draw(G, pos=util.layout_2d(G), node_size=3)
 
+graph_commander = [countries, [G.copy()]]
+#%% Node Commander setup
+# Example: D,S = 1 -> Neighboor node is Sussceptable and edge is disconnected
+#                     Then do nothing 
+#                     D, C       
+rule_set = np.array([[0.1, 0.5],    # S
+                     [0.0, 0.0],    # I
+                     [1.0, 0.0]])   # R
 
-#%%
+node_commander = util.nodeCommandGennerator(util.nodeCommanderRuleFollower,
+                                            args=(rule_set,))
+
+#%% SIR dynamics parameters
+
 rho = 0.001
 prob_trans = 0.2
 
 #%% Run scanario 
-graph_commander = [countries, [G.copy()]]
-args = (G.copy(), prob_trans, rho, graph_commander)
-results = multiRun(singleRun, args)
+
+args = (G.copy(), prob_trans, rho, node_commander, graph_commander)
+results = util.multiRun(singleRun, args)
     
 #%% Calculate Mean and standard deviation of results
 
@@ -90,20 +103,15 @@ std_results = results.std(axis=0)
 
 #%% Plotting SIR-Degree Dynamics 
 
+util.plot_SIRD([(mean_results,std_results)])
+
 #%% 
-"""
-nx_kwargs = {'node_size':5}
-full_data = EoN.discrete_SIR(g, args=(prob_trans,), rho=rho, 
-                             return_full_data=True)
-ani = full_data.animate(node_size=5, pos=layout_2d(g), width=0.125)
 
-ani.save('demo_animationWithoutCmder.mp4', fps=5)
-#%%
 nx_kwargs = {'node_size':5}
-full_data = EoN.discrete_SIR(g, args=(prob_trans,), rho=rho,
-                             node_commander=nodeCommander,
-                             return_full_data=True)
-ani = full_data.animate(node_size=5, pos=layout_2d(g), width=0.125)
+full_data, checkpoints = EoN.discrete_SIR(G, args=(prob_trans,), rho=rho,
+                                          node_commander=node_commander,
+                                          graph_commander=graph_commander,
+                                          return_full_data=True)
+ani = full_data.animate(node_size=5, pos=util.layout_2d(G), width=0.125)
 
-ani.save('demo_animationWithCmder.mp4', fps=5)
-"""
+#ani.save('demo_dualCommander.mp4', fps=5)
