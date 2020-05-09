@@ -20,12 +20,12 @@ import EoN
 import networkx as nx
 import numpy as np
 from matplotlib import pyplot as plt
-from random import seed
-from random import random as rand
-from itertools import product
+import random
+import itertools as it
 import Utilities as util
-from pandas import DataFrame as df
-seed(10)
+import pandas as pd
+
+random.seed(10)
 
 
 # %% Function definitions
@@ -37,33 +37,47 @@ def singleRun(graph, prob_trans, rho, node_commander):
 
 
 #%% Scanrio Parameters
-#g = nx.configuration_model([randint(1, 15) for i in range(999)])
-g = util.random_2d_grid_graph(1000, 0.1, rand)
+graph_size = 1000
+max_connection_dist = 1.0/np.sqrt(graph_size)*2
+g = util.random_2d_grid_graph(graph_size, max_connection_dist, random.random)
 print(nx.info(g))
-rho = 0.001
-prob_trans = 0.2
+plt.figure()
+nx.draw(g, pos=util.layout_2d(g), node_size=5)
+# low rho and prob_trans leads to high uncertanty
+rho = 0.03
+prob_trans = 0.8
 
-rule_set_generator = product((0, 1), (0, 1),
-                             (0, 1), (0, 1),
-                             (0, 1), (0, 1),)
+#%%
 results_dict = {}
-for rule_list in rule_set_generator:
+
+dist = (0.0, 0.25, 0.5, 0.75, 1.0)
+#                  D      C
+rules_options = [dist, dist,  # S
+                 (1,), (0,),  # I
+                 (1,), (0,)]  # R If disconected then reconnect
+
+rule_label = 1
+tot_num_of_runs = len(list(it.product(*rules_options)))
+
+for rule_list in it.product(*rules_options):
     # convert flattened rule table to a decimal number
-    rule_key = int("".join(str(x) for x in rule_list), 2)
+    #rule_key = int("".join(str(x) for x in rule_list), 2)
+    rule_key = rule_label
+    rule_label += 1
     # Reshape flat rule into 2d rule table
     rule_arr = np.reshape(np.array(rule_list), newshape=(3, 2))
-    print('Evaluating Rule #:', rule_key)
+    print('Evaluating Rule: ', rule_key, '/', tot_num_of_runs)
     node_commander = util.nodeCommandGennerator(util.nodeCommanderRuleFollower, 
                                                 (rule_arr,))
-    args = (g.copy(), prob_trans, rho, node_commander)
-    results = util.multiRun(singleRun, args)
+    args = (g, prob_trans, rho, node_commander)
+    results = util.multiRun(singleRun, args, N=20)
     results_dict[rule_key] = {'results': results, 'rule': rule_arr}
   
 #%% Post process
 
 all_results = {}
 for key in results_dict:
-    mean_stats = util.getStats(results_dict[key]['results'], 1000)
+    mean_stats = util.getStats(results_dict[key]['results'], graph_size)
     mean_stats['key'] = key
     for stat in mean_stats:
         if stat not in all_results:
@@ -72,15 +86,83 @@ for key in results_dict:
 for stat in all_results:
     all_results[stat] = np.array(all_results[stat])
     
+#%%
+results_df = pd.DataFrame(all_results)
+results_df['D norm'] = (results_df['D min']-results_df['D min'].min()) / \
+                       (results_df['D min'].max()-results_df['D min'].min())
+results_df['I norm'] = (results_df['I max']-results_df['I max'].min()) / \
+                       (results_df['I max'].max()-results_df['I max'].min())
+                                              
+results_df['score'] = results_df['D min']/results_df['I max']
+results_df.sort_values(['I max', 'D min'], ascending=[True,False], inplace=True)
 
-plt.plot(all_results['I max'], all_results['D min'], 'o')
+top_num = 5
+bot_num = 5
+plt.figure()
+plt.errorbar(results_df['I max'][:top_num], results_df['D min'][:top_num], 
+             xerr=results_df['I std'][:top_num], 
+             yerr=results_df['D std'][:top_num], 
+             fmt='g*')
+
+plt.errorbar(results_df['I max'][top_num:-bot_num], 
+             results_df['D min'][top_num:-bot_num], 
+             xerr=results_df['I std'][top_num:-bot_num], 
+             yerr=results_df['D std'][top_num:-bot_num], 
+             fmt='ko')
+
+plt.errorbar(results_df['I max'][-bot_num:], results_df['D min'][-bot_num:], 
+             xerr=results_df['I std'][-bot_num:], 
+             yerr=results_df['D std'][-bot_num:], 
+             fmt='r+')
+
 plt.xlabel('Peak percentage of infected population')
 plt.ylabel('Minimum average node degree')
 
-results_df = df(all_results)
+#%%
+top_rule_count = np.zeros((3, 2))
+print('------- Top ranked rules -------')
+print('key : rank : rule')
+for rank, key in enumerate(results_df['key'][:top_num]):
+    print(key, ' : ', rank, ' : ', results_dict[key]['rule'][0][:])
+    top_rule_count += results_dict[key]['rule']
+print('Sum:')
+print(top_rule_count[0][:])
 
-results_df = results_df.sort_values(['I max','D min'],ascending=[True,False])
-top_group = results_df[(results_df['I max'] < 0.04) & 
-                       (results_df['D min'] > 20.0)]
+#%%
+top_rule_count = np.zeros((3, 2))
+print('------- Mid ranked rules -------')
+print('key : rank : rule')
+for rank, key in enumerate(results_df['key'][top_num:-bot_num]):
+    print(key, ' : ',bot_num+rank,' : ',results_dict[key]['rule'][0][:])
+    top_rule_count += results_dict[key]['rule']
+print('Sum:')
+print(top_rule_count[0][:])
+
+#%%
+print('------- Bottom ranked rules -------')
+print('key : rank : rule')
+bot_rule_count = np.zeros((3, 2))
+for rank, key in enumerate(results_df['key'][-bot_num:]):
+    print(key, ' : ',len(results_df)-rank,' : ',results_dict[key]['rule'][0][:])
+    bot_rule_count += results_dict[key]['rule']
+print(bot_rule_count[0][:])
+
+#%%
+base_rule_key = results_df['key'].iloc[-1]
+midd_rule_key = results_df['key'].iloc[len(results_df)//2]
+best_rule_key = results_df['key'].iloc[0]
+base_results = util.combineResults(results_dict[base_rule_key]['results'])
+best_results = util.combineResults(results_dict[best_rule_key]['results'])   
+midd_results = util.combineResults(results_dict[midd_rule_key]['results'])   
+                                            
+plot_data = [(base_results.mean(axis=0), base_results.mean(axis=0)),
+             (midd_results.mean(axis=0), midd_results.mean(axis=0)),
+             (best_results.mean(axis=0), best_results.mean(axis=0))]
+util.plot_SIRD(plot_data, linestyles=["-", "--", "-."],
+               labels=[str(results_dict[base_rule_key]['rule'][0][:]),
+                       str(results_dict[midd_rule_key]['rule'][0][:]),
+                       str(results_dict[best_rule_key]['rule'][0][:])])
+
+
 
 
