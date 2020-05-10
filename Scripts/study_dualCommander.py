@@ -21,7 +21,7 @@ seed(10)
 
 # %% Function definitions
 
-def singleRun(graph, prob_trans, rho, node_commander, graph_commander):
+def singleRun(graph, prob_trans, rho, node_commander, graph_commander, seed):
     """
     single run produses result of a single run of the discreet SIR model. Runs
     are in herently probablistic so it is nessisary to do mutiple runs.
@@ -44,7 +44,8 @@ def singleRun(graph, prob_trans, rho, node_commander, graph_commander):
     """
     results = EoN.discrete_SIR(graph, args=(prob_trans,), rho=rho,
                                node_commander=node_commander,
-                               graph_commander=graph_commander)
+                               graph_commander=graph_commander,
+                               seed=seed)
     return results[1:]
 
 
@@ -95,7 +96,7 @@ prob_trans = 0.2
 
 args = (G.copy(), prob_trans, rho, node_commander, graph_commander)
 results = util.multiRun(singleRun, args)
-    
+
 #%% Calculate Mean and standard deviation of results
 
 mean_results = results.mean(axis=0)
