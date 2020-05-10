@@ -37,7 +37,7 @@ def singleRun(graph, prob_trans, rho, node_commander):
 
 
 #%% Scanrio Parameters
-graph_size = 1000
+graph_size = 999
 max_connection_dist = 1.0/np.sqrt(graph_size)*2
 g = util.random_2d_grid_graph(graph_size, max_connection_dist, random.random)
 print(nx.info(g))

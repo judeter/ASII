@@ -95,7 +95,7 @@ all_results = {}
 all_results['tol in'] = []
 all_results['tol out'] = []
 for key in results_dict:
-    mean_stats = util.getStats(results_dict[key]['results'], graph_size)
+    mean_stats = util.getStats(results_dict[key]['results'], graph_size*9)
     mean_stats['key'] = key
     for stat in mean_stats:
         if stat not in all_results:
@@ -110,56 +110,17 @@ for stat in all_results:
 results_df = pd.DataFrame(all_results)
 results_df.sort_values('I max', ascending=True, inplace=True)
 
-top_num = 5
-bot_num = 5
 plt.figure()
-plt.errorbar(results_df['I max'], results_df['tol in'], 
-             xerr=results_df['I std'], 
-             yerr=None, 
-             fmt='g*')
+plt.errorbar(results_df['tol in'], results_df['I max'], 
+             xerr=None, yerr=results_df['I std'], 
+             fmt='o', label = 'Internal Tolerance')
 
-plt.errorbar(results_df['I max'][top_num:-bot_num], 
-             results_df['D min'][top_num:-bot_num], 
-             xerr=results_df['I std'][top_num:-bot_num], 
-             yerr=None, 
-             fmt='ko')
-
-plt.errorbar(results_df['I max'][-bot_num:], results_df['D min'][-bot_num:], 
-             xerr=results_df['I std'][-bot_num:], 
-             yerr=None, 
-             fmt='r+')
-
-plt.xlabel('Peak percentage of infected population')
-plt.ylabel('Minimum average node degree')
-
-#%%
-top_rule_count = np.zeros((2,))
-print('------- Top ranked rules -------')
-print('key : rank : rule')
-for rank, key in enumerate(results_df['key'][:top_num]):
-    print(key, ' : ', rank, ' : ', results_dict[key]['rule'])
-    top_rule_count += results_dict[key]['rule']
-print('Sum:')
-print(top_rule_count)
-
-#%%
-top_rule_count = np.zeros((2,))
-print('------- Mid ranked rules -------')
-print('key : rank : rule')
-for rank, key in enumerate(results_df['key'][top_num:-bot_num]):
-    print(key, ' : ',bot_num+rank,' : ',results_dict[key]['rule'])
-    top_rule_count += results_dict[key]['rule']
-print('Sum:')
-print(top_rule_count)
-
-#%%
-print('------- Bottom ranked rules -------')
-print('key : rank : rule')
-bot_rule_count = np.zeros((2,))
-for rank, key in enumerate(results_df['key'][-bot_num:]):
-    print(key, ' : ',len(results_df)-rank,' : ',results_dict[key]['rule'])
-    bot_rule_count += results_dict[key]['rule']
-print(bot_rule_count)
+plt.errorbar(results_df['tol out'], results_df['I max'], 
+             xerr=None, yerr=results_df['I std'], 
+             fmt='+', label = 'External Tolerance')
+plt.legend()
+plt.xlabel('Tolerance level (percent infected)')
+plt.ylabel('Peak percentage of infected population')
 
 #%%
 base_rule_key = results_df['key'].iloc[-1]
