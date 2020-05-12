@@ -20,6 +20,7 @@ import EoN
 import networkx as nx
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib
 import random
 import itertools as it
 import Utilities as util
@@ -88,64 +89,74 @@ for stat in all_results:
     
 #%%
 results_df = pd.DataFrame(all_results)
-results_df['D norm'] = (results_df['D min']-results_df['D min'].min()) / \
-                       (results_df['D min'].max()-results_df['D min'].min())
-results_df['I norm'] = (results_df['I max']-results_df['I max'].min()) / \
-                       (results_df['I max'].max()-results_df['I max'].min())
-                                              
-results_df['score'] = results_df['D min']/results_df['I max']
 results_df.sort_values(['I max', 'D min'], ascending=[True,False], inplace=True)
 
 top_num = 5
 bot_num = 5
 plt.figure()
+
+font = {'family' : 'normal',
+        'weight' : 'normal',
+        'size'   : 12}
+
+matplotlib.rc('font', **font)
+
 plt.errorbar(results_df['I max'][:top_num], results_df['D min'][:top_num], 
              xerr=results_df['I std'][:top_num], 
              yerr=results_df['D std'][:top_num], 
-             fmt='g*')
+             fmt='g*', label = 'Optimal Strategies')
 
 plt.errorbar(results_df['I max'][top_num:-bot_num], 
              results_df['D min'][top_num:-bot_num], 
              xerr=results_df['I std'][top_num:-bot_num], 
              yerr=results_df['D std'][top_num:-bot_num], 
-             fmt='ko')
+             fmt='ko', label = 'Intermediate Strategies')
 
 plt.errorbar(results_df['I max'][-bot_num:], results_df['D min'][-bot_num:], 
              xerr=results_df['I std'][-bot_num:], 
              yerr=results_df['D std'][-bot_num:], 
-             fmt='r+')
+             fmt='r+', label='Sub-Optimal Strategies')
 
-plt.xlabel('Peak percentage of infected population')
-plt.ylabel('Minimum average node degree')
-
-#%%
-top_rule_count = np.zeros((3, 2))
-print('------- Top ranked rules -------')
-print('key : rank : rule')
-for rank, key in enumerate(results_df['key'][:top_num]):
-    print(key, ' : ', rank, ' : ', results_dict[key]['rule'][0][:])
-    top_rule_count += results_dict[key]['rule']
-print('Sum:')
-print(top_rule_count[0][:])
+plt.xlabel('Peak Percentage of Infected Population')
+plt.ylabel('Minimum Average Node Degree')
+plt.legend()
 
 #%%
-top_rule_count = np.zeros((3, 2))
-print('------- Mid ranked rules -------')
-print('key : rank : rule')
-for rank, key in enumerate(results_df['key'][top_num:-bot_num]):
-    print(key, ' : ',bot_num+rank,' : ',results_dict[key]['rule'][0][:])
-    top_rule_count += results_dict[key]['rule']
-print('Sum:')
-print(top_rule_count[0][:])
+with open('nodeStragyRangins.txt', mode='w') as f:
+    f.writelines('key : rank : rule \n')
+    top_rule_count = np.zeros((3, 2))
+    print('------- Top ranked rules -------')
+    print('key : rank : rule')
+    for rank, key in enumerate(results_df['key'][:top_num]):
+        print(key, ' : ', rank, ' : ', results_dict[key]['rule'][0][:])
+        f.write("{:4d}:{:6d}:{} \n".format(key,rank,
+                                        results_dict[key]['rule'][0][:]))
+        top_rule_count += results_dict[key]['rule']
+    print('Sum:')
+    print(top_rule_count[0][:])
 
-#%%
-print('------- Bottom ranked rules -------')
-print('key : rank : rule')
-bot_rule_count = np.zeros((3, 2))
-for rank, key in enumerate(results_df['key'][-bot_num:]):
-    print(key, ' : ',len(results_df)-rank,' : ',results_dict[key]['rule'][0][:])
-    bot_rule_count += results_dict[key]['rule']
-print(bot_rule_count[0][:])
+
+    print('------- Mid ranked rules -------')
+    top_rule_count = np.zeros((3, 2))
+    print('key : rank : rule')
+    for rank, key in enumerate(results_df['key'][top_num:-bot_num]):
+        print(key, ' : ',bot_num+rank,' : ',results_dict[key]['rule'][0][:])
+        f.write("{:4d}:{:6d}:{} \n".format(key,rank,
+                                 results_dict[key]['rule'][0][:]))
+        top_rule_count += results_dict[key]['rule']        
+    print('Sum:')
+    print(top_rule_count[0][:])
+
+
+    print('------- Bottom ranked rules -------')
+    print('key : rank : rule')
+    bot_rule_count = np.zeros((3, 2))
+    for rank, key in enumerate(results_df['key'][-bot_num:]):
+        print(key, ' : ',len(results_df)-rank,' : ',results_dict[key]['rule'][0][:])
+        f.write("{:4d}:{:6d}:{} \n".format(key,rank,
+                                        results_dict[key]['rule'][0][:]))
+        bot_rule_count += results_dict[key]['rule']
+    print(bot_rule_count[0][:])
 
 #%%
 base_rule_key = results_df['key'].iloc[-1]

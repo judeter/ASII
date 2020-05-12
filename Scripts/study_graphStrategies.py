@@ -10,6 +10,7 @@ import EoN
 import networkx as nx
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib
 import random
 import Utilities as util
 import itertools as it
@@ -64,7 +65,7 @@ nx.draw(G, pos=util.layout_2d(G), node_size=3)
 graph_commander = [countries, [G.copy()]]
 
 # want less than 9 initialy infected individuals
-rho = 3/(graph_size*9)
+rho = 1/(graph_size*9)
 prob_trans = 0.8
 
 #%% Run without quarenteen scanario 
@@ -108,19 +109,23 @@ for stat in all_results:
     
 #%%
 results_df = pd.DataFrame(all_results)
+results_df['net tol'] = results_df['tol in'] * results_df['tol out']  
 results_df.sort_values('I max', ascending=True, inplace=True)
+with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+    f = open('graphCommanderResults.txt', mode='w')
+    f.write(str(results_df))
+    f.close()
 
 plt.figure()
-plt.errorbar(results_df['tol in'], results_df['I max'], 
-             xerr=None, yerr=results_df['I std'], 
-             fmt='o', label = 'Internal Tolerance')
 
-plt.errorbar(results_df['tol out'], results_df['I max'], 
-             xerr=None, yerr=results_df['I std'], 
-             fmt='+', label = 'External Tolerance')
-plt.legend()
-plt.xlabel('Tolerance level (percent infected)')
-plt.ylabel('Peak percentage of infected population')
+font = {'family' : 'normal',
+        'weight' : 'normal',
+        'size'   : 12}
+matplotlib.rc('font', **font)
+
+plt.plot(results_df['I max'], results_df['D min'], 'o')
+plt.xlabel('Peak Percentage of Infected Population')
+plt.ylabel('Minimum Average Node Degree')
 
 #%%
 base_rule_key = results_df['key'].iloc[-1]

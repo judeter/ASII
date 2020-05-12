@@ -145,6 +145,28 @@ def nodeCommanderRuleFollower(neighbors, connected_neighbors,
             pass  # do nothing
     return connect_nodes, disconnect_nodes
 
+#%%
+def quarentineNode(neighbors, connected_neighbors, susceptible_neighbors, 
+                   infected_neighbors, cheat_rate=0.25, quarentine_perct=1.0):
+    import random 
+
+    if random.random() < cheat_rate:
+        # Cheating quarenteen rules and adding edges
+        disconnected_nodes = neighbors.difference(connected_neighbors)        
+        num_to_connect = random.randint(0, len(disconnected_nodes))
+        connect_nodes = random.sample(disconnected_nodes, num_to_connect)
+        return connect_nodes, []         
+    else:
+        num_of_allowed_edges = int(len(neighbors) * (1 - quarentine_perct))
+        num_edges_to_remove = len(connected_neighbors) - num_of_allowed_edges 
+        if num_edges_to_remove > 0:
+            disconnect_nodes = random.sample(connected_neighbors,
+                                             num_edges_to_remove)
+            return [], disconnect_nodes
+        else:
+            return [], []
+            
+        
               
 #%%            
 def nodeCommandGennerator(nodeCommander, args):
@@ -203,33 +225,53 @@ def getStats(results, graph_size=1):
 
 
 #%%
-def plot_SIRD(mean_and_std_list, plot_confidence_interval=True, fontsize=24,
-              linestyle_list = ['solid']):
+def plot_SIRD(mean_and_std_list, show_confidence_interval=True, fontsize=12,
+              linestyles = ['solid'], labels=None):
     
     import matplotlib.pyplot as plt
+    import matplotlib
+    from matplotlib.lines import Line2D
     import numpy as np
+     
+    font = {'family' : 'normal',
+            'weight' : 'normal',
+            'size'   : 12}
+
+    matplotlib.rc('font', **font)
     
     fig, axarr = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(4,8))
-
-    for mean_and_std, linestyle in zip(mean_and_std_list, linestyle_list):
+    
+    for mean_and_std, linestyle in zip(mean_and_std_list, 
+                                              linestyles):
         mean, std = mean_and_std
-        axarr[0].set_title('Mean Susceptible', fontsize=fontsize)
+        axarr[0].set_ylabel('Mean \n Susceptible', fontsize=fontsize)
         axarr[0].plot(mean[0], color='green', linestyle=linestyle)
         
-        axarr[1].set_title('Mean Infected', fontsize=fontsize)
+        axarr[1].set_ylabel('Mean \n Infected', fontsize=fontsize)
         axarr[1].plot(mean[1], color='red', linestyle=linestyle)
-        upper_95pct = mean[1]+std[1] 
-        lower_95pct = mean[1]-std[1]
-        x = np.arange(len(std[1]))
-        axarr[1].fill_between(x, upper_95pct, lower_95pct, color='red', 
-                              alpha=0.1)
+        if show_confidence_interval:
+            upper_95pct = mean[1]+std[1] 
+            lower_95pct = mean[1]-std[1]
+            x = np.arange(len(std[1]))
+            axarr[1].fill_between(x, upper_95pct, lower_95pct, color='red', 
+                                  alpha=0.1)
         
-        axarr[2].set_title('Mean Recovered', fontsize=fontsize)
+        axarr[2].set_ylabel('Mean \n Recovered', fontsize=fontsize)
         axarr[2].plot(mean[2], color='gray', linestyle=linestyle)
         
-        axarr[3].set_title('Mean Average Node Degree', fontsize=fontsize)
+        axarr[3].set_ylabel('Mean Average \n Node Degree', fontsize=fontsize)
         axarr[3].plot(mean[3], color='black', linestyle=linestyle)
     
+    if labels:
+        handles = []
+        for linestyle, label in zip(linestyles,labels):
+            handles.append(Line2D([], [], color='black', 
+                                  linestyle=linestyle, label=label))
+        plt.legend(handles=handles)
+    for ax in axarr:
+        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    
+    axarr[-1].set_xlabel('Time')
     plt.tight_layout()
     return fig
 
