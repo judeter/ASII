@@ -19,8 +19,12 @@ import pandas as pd
 random.seed(10)
 
 
+<<<<<<< HEAD
 # %% Function definitions
 def singleRun(graph, prob_trans, rho, node_commander, graph_commander):
+=======
+def singleRun(graph, prob_trans, rho, node_commander, graph_commander, seed):
+>>>>>>> 9df3fc7850dc67ed4d94984f4a8fbff216ba9932
     """
     single run generates result from single run of the discreet SIR model. Runs
     are inherently probablistic so it is nessisary to do mutiple runs.
@@ -64,9 +68,33 @@ plt.vlines(0,-1,2); plt.vlines(1,-1,2)
 plt.hlines(0,-1,2); plt.hlines(0,-1,2)
 graph_commander = [countries]
 
+<<<<<<< HEAD
 # want less than 9 initialy infected individuals
 rho = 1/(graph_size*9)
 prob_trans = 0.8
+=======
+rho = 1/(graph_size*4)
+prob_trans = 0.3
+
+#%% Run baseline scanario 
+
+node_commander = util.nodeCommandGennerator(util.quarentineNode,
+                                            args=(0.0, 0.0))
+graph_commander[0]['C1']['tolerance_out'] = 1.0
+graph_commander[0]['C2']['tolerance_out'] = 1.0
+graph_commander[0]['C3']['tolerance_out'] = 1.0
+graph_commander[0]['C4']['tolerance_out'] = 1.0
+args = (G.copy(), prob_trans, rho, node_commander, graph_commander)
+
+results = util.multiRun(singleRun, args)
+
+#%% Calculate Mean and standard deviation of results
+
+base_line_results = util.multiRun(singleRun, args)
+base_line_plot_pair = (base_line_results.mean(axis=0),
+                       base_line_results.std(axis=0))
+util.plot_SIRD([base_line_plot_pair], graph_size, fontsize=12)
+>>>>>>> 9df3fc7850dc67ed4d94984f4a8fbff216ba9932
 
 #%% Run without quarenteen scanario 
 
