@@ -1,38 +1,8 @@
 # ASII
-Analysis of the Spread of Information and Infection
+_Analysis of the Spread of Information and Infection_
 
-## INFORMATION (AGENT) PROPERTIES
-	Information is more abstract, it docent necessarily have features like an infection instead it more about what the agents in the simulation have access to. How many infected agents can they identify? How connected are they?
-		AGENTS
-		- Nodes
-		- Sub-graphs
-		- Infections
-		
-		
-		
+COVID-19 has had a profound impact on lives worldwide, and researchers from multiple disciplines have been coming together to attempt the daunting feat of predicting what actions are best for slowing the spread of infection. In our paper (found [here](CS523_Project_3.pdf)) we present the results of an epidemiological model designed to compare the effects of different types of decision making, modeling isolation by the individual or by their community. Our results show that countries acting fast to close borders works especially well when the individuals within the country also try to isolate themselves from others, even if some individuals go against the guidelines occasionally. We also show by use of a toy model that when countries act to close borders early, the effect that the collective population has on a country reduces. 
 
-## INFECTION PROPERTIES
-	- Probability of transmission 
-	- Incubation period
+All code used to generate the model and results from the paper can be found in the __Scripts__ and __TransferEntropy__ directories, along with here: https://github.com/judeter/Mathematics-of-Epidemics-on-Networks.git.
 
 
-## OTHER IDEAS
-### GRAPH GENERATION
-	Below is an algorithm for generating a graph with similarities to the geographical layout of real cities. The graph could also be viewed as a community or family with highly connected central members, and lesser socially connected members at the edge of the group. The construction of the graph also provides a convenient way for plotting the graph using networkX.
-	
-	1) *Group Initialization*: Scatter $N_g$ points across a 2d plane. Each of these points will represent a sub-graph in the full network. These can be though of as central community hubs.
-	
-	2) *Member Initialization*: Around each point $n_g$ scatter $N_i$ points with a Gaussian distribution (or other distribution). Each node assigned at this point should be assigned a group index indicating the group belongs too.
-	
-	3) *Intra-Group Connections*: Then all nodes should be connected with a weight equal to the euclidean distance separating them. Signifying either geographical or social connection of the nodes. 
-		- There could also be a Threshold to limit number of connections. However this could result in isolated and completely un-connected nodes. 
-		
-	4) *Inter-Group Connections*: There are multiple ways to connect individual groups. I'll outline a few below, no one of them at this point stands out as the obvious way to proceed.
-		4a) Euclidean distance with threshold: Again connect all nodes waited by their euclidean distances, with the option of not adding a note if its greater than some value. In this case groups would be connected by their peripheral members.
-		4b) Central Node Connections: All central nodes could be connected with some modified weight. This could signify air travel as airports and other transportation systems as they are typically located in dense areas and are more efficient ways to connect to other geographically distant locations.
-
-
-
-## DATA
-	- Accessed google mobility data at link below.
-		https://www.google.com/covid19/mobility/
